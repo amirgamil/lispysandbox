@@ -30,14 +30,19 @@ header,
 
 button {
     font-family: 'Inter', system-ui, sans-serif;
+    font-weight: 700;
     border: 0;
     outline: 0;
+    box-shadow: 0 0 4px 1px rgba(0, 0, 0, 0.2);
     background-color: var(--bg);
     color: var(--fg);
     outline: none;
-    padding: 0.5em 0.5em;
-    opacity: 0.4;
+    border-radius: 3px;
+    font-size: 0.8em;
     text-decoration: none;
+    height: 30px;
+    margin: 8px 5px 0px 0px;
+    
 }
 
 .app {
@@ -62,7 +67,7 @@ textarea {
 
 
 button:hover, a:hover {
-   opacity: 1;
+   background-color: grey;
 }
 
 
@@ -82,24 +87,50 @@ footer, p.sub {
 
 .block-heading {
     display: flex;
-    align-items: center;
+    flex-direction: column;
 }
 
+.output {
+    display: flex;
+    flex-direction: row;
+    width: 100%;
+    background-color: #eaeaea;
+    align-items: center;
+    border-bottom-left-radius: 7px;
+    border-bottom-right-radius: 7px;
+    
+    box-shadow: 0 0 4px 1px rgba(255, 255, 255, 0.3);
+}
 
+.code-output {
+    flex: 1;
+    white-space: pre-wrap;
+    background-color: #eaeaea;
+    height: 100%;
+    padding: 5px 15px 5px 15px;
+    display: block;
+}
 
-input,
+pre, textarea,
+.p-heights {
+    color: #222;
+}
+
 textarea,
 .p-heights {
     box-sizing: border-box;
-    border: none;
     width: 100%;
-    color: var(--fg);
-    min-height: 2em;
+    border: 0px;
+    padding: 10px 15px 10px 15px;
+    min-height: 3.5em;
     line-height: 1.5em;
     margin: 0;
-    background: transparent;
-    outline: none;
-    font-family: 'Inter';
+    border-top-left-radius: 7px;
+    border-top-right-radius: 7px;
+    -webkit-appearance: none;
+    box-shadow: 0 0 4px 1px rgba(0, 0, 0, 0.2);
+    outline: 0;
+    font-family: 'Inconsolata', monospace;
     word-wrap: break-word;
     white-space: pre-wrap;
 }

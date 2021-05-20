@@ -1,2 +1,7 @@
+github.com/amirgamil/lispy v0.0.0-20210518040458-8f267c2ed912 h1:iYHCQuHYuSfjzKPy1OGMP97LhwTY4XrdnTvVe8Xu01E=
+github.com/amirgamil/lispy v0.0.0-20210519222054-9b8e9d67464f h1:EJEiRu2RWpaqHDoiOIcU+CvV5gm31ZLhc52DAjDTxII=
+github.com/amirgamil/lispy v0.0.0-20210519222054-9b8e9d67464f/go.mod h1:Bp2t1HbMd1TsiUL+aLh7NHkl46rZfh6W9Hwz1v/t3N0=
+github.com/amirgamil/lispy v0.0.0-20210519225404-1513b3bbae63 h1:Xfa3uueXlnG5hy1La0G7JIO+b0fhUCVQQWfZi4+S38g=
+github.com/amirgamil/lispy v0.0.0-20210519225404-1513b3bbae63/go.mod h1:Bp2t1HbMd1TsiUL+aLh7NHkl46rZfh6W9Hwz1v/t3N0=
 github.com/gorilla/mux v1.7.4 h1:VuZ8uybHlWmqV03+zRzdwKL4tUnIp1MAQtp1mIFE1bc=
 github.com/gorilla/mux v1.7.4/go.mod h1:DVbg23sWSpFRCP0SfiEN6jmj59UnW/n46BH5rLB71So=

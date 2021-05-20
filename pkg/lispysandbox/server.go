@@ -2,13 +2,15 @@ package lispysandbox
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
-	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
+	"strings"
 	"time"
 
+	"github.com/amirgamil/lispy/pkg/lispy"
 	"github.com/gorilla/mux"
 )
 
@@ -18,41 +20,21 @@ func check(e error) {
 	}
 }
 
-func ensureDataExists() {
-	jsonFile, err := os.Open(dbPath)
+func evaluateCode(source string) string {
+	result, err := lispy.EvalSource(source)
+	fmt.Println(result)
 	if err != nil {
-		f, errCreating := os.Create(dbPath)
-		if errCreating != nil {
-			log.Fatal("Could not create database")
-			return
-		}
-		defer f.Close()
-	} else {
-		defer jsonFile.Close()
+		result = make([]string, 0)
 	}
-
-}
-
-func getThoughts(w http.ResponseWriter, r *http.Request) {
-	var thoughts []thought
-	jsonFile, _ := os.Open(dbPath)
-	byteArray, _ := ioutil.ReadAll(jsonFile)
-	json.Unmarshal(byteArray, &thoughts)
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(thoughts)
-}
-
-func writeThoughts(w http.ResponseWriter, r *http.Request) {
-	var thoughts []thought
-	err := json.NewDecoder(r.Body).Decode(&thoughts)
-	check(err)
-	data, err := json.MarshalIndent(thoughts, "", "")
-	check(err)
-	ioutil.WriteFile(dbPath, data, 0644)
+	return strings.Join(result, "\n")
 }
 
 func runCode(w http.ResponseWriter, r *http.Request) {
-
+	var source string
+	err := json.NewDecoder(r.Body).Decode(&source)
+	check(err)
+	output := evaluateCode(source)
+	json.NewEncoder(w).Encode(output)
 }
 
 func index(w http.ResponseWriter, r *http.Request) {
@@ -66,10 +48,7 @@ func index(w http.ResponseWriter, r *http.Request) {
 	io.Copy(w, indexFile)
 }
 
-func main() {
-	//create data.json if it doesn't exit
-	ensureDataExists()
-
+func StartServer() {
 	r := mux.NewRouter()
 
 	srv := &http.Server{
@@ -80,7 +59,7 @@ func main() {
 	}
 
 	r.HandleFunc("/", index)
-	r.Methods("POST").Path("/code").HandlerFunc(writeThoughts)
+	r.Methods("POST").Path("/code").HandlerFunc(runCode)
 	r.PathPrefix("/static/").Handler(http.StripPrefix("/static/", http.FileServer(http.Dir("./static"))))
 	log.Printf("Server listening on %s\n", srv.Addr)
 	log.Fatal(srv.ListenAndServe())

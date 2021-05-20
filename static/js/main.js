@@ -20,27 +20,6 @@ const MONTHS = [
     'December',
 ];
 
-function fmtDate(date) {
-    return `${MONTHS[date.getMonth()]} ${date.getDate()}, ${date.getFullYear()}`;
-}
-
-function relativeDate(date) {
-    const delta = (new Date() - date) / 1000;
-    if (delta < 60) {
-        return '< 1 min ago';
-    } else if (delta < 3600) {
-        return `${~~(delta / 60)} min ago`;
-    } else if (delta < 86400) {
-        return `${~~(delta / 3600)} hr ago`;
-    } else if (delta < 86400 * 2) {
-        return 'yesterday';
-    } else if (delta < 86400 * 3) {
-        return '2 days ago';
-    } else {
-        return date.toLocaleDateString() + ' ' + formatTime(date);
-    }
-}
-
 // only fire fn once it hasn't been called in delay ms
 const bounce = (fn, delay) => {
     let to = null;
@@ -52,49 +31,40 @@ const bounce = (fn, delay) => {
 }
 
 //smallest unit of mutuable data
-class Thought extends Record { }
+class Code extends Record { }
 
-//store for handling ordered list of records
-class ThoughtStore extends StoreOf(Thought) {
-    fetch() {
-        return fetch("/data")
-            .then(r => r.json())
-            .then(data => {
-                //assign everything to blocks
-                this.reset(data.map(thought => new Thought(thought)));
-            });
-    }
+// //store for handling ordered list of records
+// class ThoughtStore extends StoreOf(Thought) {
+//     fetch() {
+//         return fetch("/data")
+//             .then(r => r.json())
+//             .then(data => {
+//                 //assign everything to blocks
+//                 this.reset(data.map(thought => new Thought(thought)));
+//             });
+//     }
 
-    save() {
-        return fetch("/data", {
-            method: "POST",
-            body: JSON.stringify(this.serialize()),
-        });
-    }
-}
+//     save() {
+//         return fetch("/data", {
+//             method: "POST",
+//             body: JSON.stringify(this.serialize()),
+//         });
+//     }
+// }
 
-class ThoughtItem extends Component {
-    init(record, removeCallback) {
-        this.isCollapsed = true;
+class SandBox extends Component {
+    init(record, removeCallback) {;
 
-		const tags = record.data.T;
-		let buildString = "";
-		if (tags != null) {
-			tags.forEach((tag, _) => {
-				buildString += "#" + tag + " ";
-			});
-		}
-		
-		this.tagString = buildString;
-        this.handleTitleInput = evt => this.handleInput("h", evt);
+        this.handleTitleInput = evt => this.handleInput("o", evt);
         this.handleBodyInput = evt => this.handleInput("b", evt);
 		this.handleTagInput = this.handleTagInput.bind(this);
         this.removeCallback = removeCallback;
         this.show = this.show.bind(this);
-        this.setCollapsed = this.setCollapsed.bind(this);
 		this.handleTagKeydown = this.handleTagKeydown.bind(this);
         this.handleKeydown = this.handleKeydown.bind(this);
         this.handleRemove = this.handleRemove.bind(this);
+        this.save = this.save.bind(this);
+        this.getResult = this.getResult.bind(this);
         this.bind(record, data => this.render(data));
     }
 
@@ -102,9 +72,25 @@ class ThoughtItem extends Component {
         this.isCollapsed = false;
         this.render();
     }
-    setCollapsed() {
-        this.isCollapsed = true;
-        this.render();
+
+    getResult() {
+        this.save()
+            .then(res => res.json())
+            .then(data => {
+                console.log(data)
+                this.record.update({o: data})
+            }).catch(exception => {
+                //if this failed for one reason or another, show error eval
+                this.record.update({o: "Error evaluating the expression!"})
+            })
+  
+    }
+
+    save() {
+        return fetch("/code", {
+            method: "POST",
+            body: JSON.stringify(this.record.get("b"))
+        });
     }
 
 	handleTagInput(evt) {
@@ -124,7 +110,6 @@ class ThoughtItem extends Component {
 			this.record.update({t: tags})
 		}
 	}
-
     handleKeydown(evt) {
         if (evt.key === 'Tab') {
             //stop what would have happened so we can artifically simulate tab
@@ -134,6 +119,29 @@ class ThoughtItem extends Component {
                 const text = this.record.get("b").substring(0, idx) + "    " + this.record.get("b").substring(idx + 1);
                 this.record.update({b: text});
             }
+        } else if (evt.key === '(' || evt.key === '"' || evt.key === "'" || evt.key === "[") {
+            evt.preventDefault();
+            const idx = evt.target.selectionStart;
+            var [leftAdd, rightAdd] = [evt.key, evt.key];
+            if (leftAdd === '(') {
+                rightAdd = ')';
+            } else if (leftAdd == '[') {
+                rightAdd = ']'
+            }
+            if (idx != null) {
+                const text = this.record.get("b").substring(0, idx) + leftAdd + rightAdd + this.record.get("b").substring(idx);
+                this.record.update({b: text});
+                evt.target.setSelectionRange(idx + 1, idx + 1);
+            }
+        } else if (evt.key === 'Backspace') {
+            const text = this.record.get("b");
+            const idx = evt.target.selectionStart;
+            if (idx != null && text.substring(idx - 1, idx+1) === "()" || text.substring(idx - 1, idx + 1) === "''" || text.substring(idx - 1, idx + 1) === '""' || text.substring(idx - 1, idx + 1) === '[]') {
+                evt.preventDefault();
+                const update = text.substring(0, idx - 1) + text.substring(idx+1)
+                this.record.update({b: update})
+                evt.target.setSelectionRange(idx - 1, idx - 1);
+            }
         }
     }
 
@@ -141,64 +149,49 @@ class ThoughtItem extends Component {
         this.removeCallback(this.record);
     }
 
-    compose({h, b, t}) {
-        return jdom`<div class = "block>
-                <div class="block-heading">
-                    <input class = "title"
-                    value="${h}"
-                    placeholder="thought"
-                    oninput="${this.handleTitleInput}"/>
-                    <div class = "button-bar">
-                        <button class="toggle"
-                        onclick="${() => this.isCollapsed ? this.show() : this.setCollapsed()}">
-                        ${this.isCollapsed ? "↓" : "→"}
-                        </button>
-                        <button class="close"
-                        onclick="${this.handleRemove}">
-                        X
-                        </button>
+    compose({b, o}) {
+        return jdom`
+                <div class = "block>
+                    <div class="block-heading">
+                        <h1 class = "title">
+                            Lispy Sandbox
+                        </h1>
+                        <p> This is a sandbox to run <a href="https://github.com/amirgamil/lispy">Lispy</a>
+                        code quickly and easily.
+                        </p>
+                    </div>
+                    <div class="block-body">
+                        <textarea class="thought"
+                        placeholder="Write some code"
+                        value="${b}"
+                        onkeydown="${this.handleKeydown}"
+                        oninput="${this.handleBodyInput}" />
+                        <div class = "p-heights ${b.endsWith('\n') ? 'endline' : ''}">${b}</div>
+                    </div>
+                    <div class="output">
+                        <pre class="code-output">
+                        ${o}
+                        </pre>
+                        <button onclick=${this.getResult}>Run</button>
                     </div>
                 </div>
-				<input class = "tags"
-					placeholder = "#tags"
-					oninput="${this.handleTagInput}"
-					onkeydown="${this.handleTagKeydown}"
-					value="${this.tagString}"/>
-                ${this.isCollapsed ? null : jdom`
-				<div class="block-body">
-					<textarea class="thought"
-					placeholder="Enter your thought here"
-					value="${b}"
-					onkeydown="${this.handleKeydown}"
-					oninput="${this.handleBodyInput}" />
-					<div class = "p-heights ${b.endsWith('\n') ? 'endline' : ''}">${b}</div>
-            	</div>`}
-            </div>`;
+                `
     }
 }
 
-class ThoughtList extends ListOf(ThoughtItem) {
-    compose() {
-        return jdom`<div class="thoughts">
-            ${this.nodes}
-        </div>`;
-    }
-}
 
 class App extends Component {
     init() {
 		
-       	this.store = new ThoughtStore();
-       	this.list  = new ThoughtList(this.store, (data) => this.store.remove(data));
+        const code = new Code({
+            b: "",
+            o: ""
+        })
+
+       	this.list  = new SandBox(code);
        	this.date = new Date();
        	this.save = bounce(this.save.bind(this), 800);
 	   	this._loading = false;
-	   	this._lastSaved = new Date();
-       	this.store.fetch()
-                .then(() => {
-                    this.bind(this.store, this.save);
-                    this.render();
-                })
 	   	this._interval = setInterval(this.render.bind(this), 60 * 1000);
 
     }
@@ -209,18 +202,6 @@ class App extends Component {
 		}
 		this._loading = true;
 		this.render();
-        this.store.save()
-				.then(() => {
-					this._loading = false;
-					this._lastSaved = new Date();
-				}).catch(error => {
-					console.log(error);
-				}).finally(() => {
-					setTimeout(() => {
-						this.render();
-						// adding artificial delay makes this easy to see as a user.
-					}, 500);
-				});
     }
 
     remove() {
@@ -240,32 +221,17 @@ class App extends Component {
 		return jdom
         `<main class="app" oninput="${this.save}">
             <header>
-                <div class="header-left>
-                <h1>${fmtDate(this.date)}</h1>
-                <p class="sub">
-                    ${this._loading ? "Saving..." : relativeDate(this._lastSaved)}
-                </p>
-                </div>
-                <div class = "header-right">
-                    <button class = "add" onclick=${() => {
-                        this.store.create({h: '', b: '', t: []});
-                        console.log(this.store.summarize());
-                    }}>
-                    +
-                    </button>
-                </div>
-
             </header>
             ${this.list.node}
             <footer>
                 <p>
                     Built with love by
-                    <a href = "http://amirbolous.com">
-                        Amir
-                    </a> and inspired by 
-					<a href = "https://github.com/thesephist/pico">
-						Pico
-					</a>
+                    <a href = "https://amirbolous.com">
+                        Amir</a>
+                    inspired by 
+                    <a href = "https://nightvale.dotink.co/">
+                        Nightvale
+                    </a>
                 </p>
             </footer>
        </main>`;

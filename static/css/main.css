@@ -99,7 +99,8 @@ footer, p.sub {
     border-bottom-left-radius: 7px;
     border-bottom-right-radius: 7px;
     
-    box-shadow: 0 0 4px 1px rgba(255, 255, 255, 0.3);
+    box-shadow: 0 0 4px 1px rgba(0, 0, 0, 0.2);
+    /*box-shadow: 0 0 4px 1px rgba(255, 255, 255, 0.3);*/
 }
 
 .code-output {

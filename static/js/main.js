@@ -33,25 +33,6 @@ const bounce = (fn, delay) => {
 //smallest unit of mutuable data
 class Code extends Record { }
 
-// //store for handling ordered list of records
-// class ThoughtStore extends StoreOf(Thought) {
-//     fetch() {
-//         return fetch("/data")
-//             .then(r => r.json())
-//             .then(data => {
-//                 //assign everything to blocks
-//                 this.reset(data.map(thought => new Thought(thought)));
-//             });
-//     }
-
-//     save() {
-//         return fetch("/data", {
-//             method: "POST",
-//             body: JSON.stringify(this.serialize()),
-//         });
-//     }
-// }
-
 class SandBox extends Component {
     init(record, removeCallback) {;
 
@@ -77,7 +58,6 @@ class SandBox extends Component {
         this.save()
             .then(res => res.json())
             .then(data => {
-                console.log(data)
                 this.record.update({o: data})
             }).catch(exception => {
                 //if this failed for one reason or another, show error eval

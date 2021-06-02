@@ -45,6 +45,10 @@ button {
     
 }
 
+p {
+    line-height: 1.4em;
+}
+
 .app {
     max-width: 800px;
     padding: 2em 0;
@@ -66,8 +70,63 @@ textarea {
 }
 
 
-button:hover, a:hover {
+.top-header {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    align-items: center;
+}
+
+.row {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-evenly;
+    width: 100%;
+}
+
+.light {
+    font-weight: 300 !important;
+}
+
+@media only screen and (min-width: 400px) {
+    .line {
+        width: 0.25em;
+    }
+}
+
+@media only screen and (min-width: 600px) {
+    .line {
+        width: 4em;
+    }
+}
+
+@media only screen and (min-width: 800px) {
+    .line {
+        width: 6em;
+    }
+}
+
+@media only screen and (min-width: 1000px) {
+    .line {
+        width: 8em;
+    }
+}
+
+.line {
+    height: 1px;
+    padding: 0 10px 0 10px;
+    background-color: var(--fg);
+    z-index: 5 !important;
+}
+
+code {
+    font-family: monospace;
+}
+
+button:hover, .link:hover {
    background-color: grey;
+   cursor: grab !important;
 }
 
 
@@ -80,7 +139,11 @@ footer, p.sub {
     font-size: .8em;
 }
 
-.block {
+.description {
+    padding: 10px 0px 10px 0px;
+}
+
+.block, .summary, .description {
     width: 100%;
 }
 
@@ -174,7 +237,16 @@ textarea {
     padding-bottom: 1.5em;
 }
 
-a {
+.link {
     text-decoration: underline;
     color: var(--fg);
+}
+
+.nav {
+    color: var(--fg);
+    text-decoration: none;
+}
+
+.nav:hover {
+    opacity: 0.6;    
 }

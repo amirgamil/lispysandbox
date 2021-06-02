@@ -3,6 +3,7 @@ const {
     StoreOf,
     Component,
     ListOf,
+    Router
 } = window.Torus;
 
 const MONTHS = [
@@ -33,6 +34,17 @@ const bounce = (fn, delay) => {
 //smallest unit of mutuable data
 class Code extends Record { }
 
+class CodeStore extends StoreOf(Code) {
+    fetch() {
+        return fetch("/data")
+            .then(r => r.json())
+            .then(data => {
+                //assign everything to blocks
+                this.reset(data.map(code => new Code(code)));
+            });
+    }
+}
+
 class SandBox extends Component {
     init(record, removeCallback) {;
 
@@ -44,7 +56,7 @@ class SandBox extends Component {
 		this.handleTagKeydown = this.handleTagKeydown.bind(this);
         this.handleKeydown = this.handleKeydown.bind(this);
         this.handleRemove = this.handleRemove.bind(this);
-        this.save = this.save.bind(this);
+        // this.save = this.save.bind(this);
         this.getResult = this.getResult.bind(this);
         this.bind(record, data => this.render(data));
     }
@@ -129,15 +141,14 @@ class SandBox extends Component {
         this.removeCallback(this.record);
     }
 
-    compose({b, o}) {
+    compose({h, d, b, o}) {
+        document.body.classList.add("text");
+        document.getElementsByClassName("text").innerHTML = d;
         return jdom`
                 <div class = "block>
-                    <div class="block-heading">
-                        <h1 class = "title">
-                            Lispy Sandbox
-                        </h1>
-                        <p> This is a sandbox to run <a href="https://github.com/amirgamil/lispy">Lispy</a>
-                        code quickly and easily.
+                    <div class="description">
+                        <h4>${h}</h4>
+                        <p innerHTML = ${d}>
                         </p>
                     </div>
                     <div class="block-body">
@@ -159,20 +170,47 @@ class SandBox extends Component {
     }
 }
 
+class SandBoxList extends ListOf(SandBox) {
+    compose() {
+        return jdom`
+        <div class="sandboxes">
+            ${this.nodes}
+        </div>
+        `
+    }
+}
+
 
 class App extends Component {
-    init() {
-		
-        const code = new Code({
-            b: "",
-            o: ""
-        })
-
-       	this.list  = new SandBox(code);
+    init(router) {
+        this.store = new CodeStore()
+       	this.list  = new SandBoxList(this.store, (data) => this.store.remove(data));
+        this.aboutActive = false;
        	this.date = new Date();
        	this.save = bounce(this.save.bind(this), 800);
-	   	this._loading = false;
+	   	this._loading = true;
 	   	this._interval = setInterval(this.render.bind(this), 60 * 1000);
+        this.bind(router, ([name, params]) => {
+            console.log(name);
+            switch (name) {
+                case "about": {
+                    this.aboutActive = true;
+                    this.render();
+                    break;
+                }
+                default:
+                    this.aboutActive = false;
+                    this.store.fetch()
+                               .then(() => {
+                                    this.bind(this.store, this.save);
+                                    this._loading = false;
+                                    this.render();
+                                });
+                    this.render();
+                    break;
+
+            }
+        })
 
     }
 
@@ -180,7 +218,6 @@ class App extends Component {
 		if (this._lastSaved === new Date()) {
 			return;
 		}
-		this._loading = true;
 		this.render();
     }
 
@@ -201,15 +238,60 @@ class App extends Component {
 		return jdom
         `<main class="app" oninput="${this.save}">
             <header>
+            <div class="row">
+                    <h4><a class = "nav light hover-underline-animation" href = "https://github.com/amirgamil/lispy">Source</a></h4>
+                    <div class = "line">
+                    </div>
+                    <h2>
+                    <a class = "nav" href="/" style="font-weight: 700">Lispy</a>
+                    </h2>
+                    <div class= "line">
+                    </div>
+                    <h4><a class = "nav light hover-underline-animation" href = "/about">About</a></h4>
+                </div>
             </header>
+            ${this.aboutActive ? 
+                (jdom`
+                <div class="block-heading">
+                <h3> What is Lispy? </h3>
+                <p style="margin-top: -5px">
+                <strong>Lispy</strong> is a programming language that is inspired by Scheme and Clojure. 
+                It's a simple Lisp-dialect I built to better understand Lisp and, more generally, 
+                functional programming.
+                
+                I kept a (relatively) detailed <a class = "link" href = "https://amirbolous.com/posts/pl">journal</a> 
+                working on this project, which I hope is helpful for anyone interested in doing something
+                similar.
+                </p>
+
+                <h3> What's this website? </h3>
+                This website provides an interactive playground to learn about the language
+                and run code!
+                
+                </p>
+            </div>
+            `): (jdom`
+            <div class = "block-heading">
+                <h3> A Breif Technical Tour </h3>
+                <p style="margin-top: -5px">
+                <strong>Lispy</strong> is written as a tree-walk interpreter in Go with a recursive-descent parser. 
+                
+                Because Lispy is interpreted, not compiled, it does not have a separate macro-expansion 
+                stage (that would typically be done before code is evaluated). Instead, Lispy handles 
+                macros as special functions, which it evaluates twice: once to generate the syntax of 
+                the code, and the second to run this generated syntax (as a macro would).   
+            </div>
+            ${this._loading ? jdom`<p style="text-align:center">Loading...</p>`: null}
             ${this.list.node}
+            <p>If you've made it this far, then please do check the <a class = "link" href = 'https://github.com/amirgamil/lispy'>source</a> where you can dig 
+            into all of the details we missed here or reach out <a class = "link" href='https://twitter.com/amirbolous'>directly</a>!</p>`)}
             <footer>
                 <p>
                     Built with love by
-                    <a href = "https://amirbolous.com">
+                    <a class = "link" href = "https://amirbolous.com">
                         Amir</a>
                     inspired by 
-                    <a href = "https://nightvale.dotink.co/">
+                    <a class = "link" href = "https://nightvale.dotink.co/">
                         Nightvale
                     </a>
                 </p>
@@ -218,5 +300,13 @@ class App extends Component {
     }
 }
 
-const app = new App();
+
+const router = new Router({
+    about: "/about",
+    default: "/",
+})
+
+
+
+const app = new App(router);
 document.body.appendChild(app.node);

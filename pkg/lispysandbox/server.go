@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
@@ -18,6 +19,13 @@ func check(e error) {
 	if e != nil {
 		panic(e)
 	}
+}
+
+type snippet struct {
+	Header      string `json:"h"`
+	Description string `json:"d"`
+	Body        string `json:"b"`
+	Output      string `json:"o"`
 }
 
 func evaluateCode(source string) string {
@@ -48,6 +56,19 @@ func index(w http.ResponseWriter, r *http.Request) {
 	io.Copy(w, indexFile)
 }
 
+func getData(w http.ResponseWriter, r *http.Request) {
+	dataFile, _ := os.Open("./code.json")
+	byteArr, err := ioutil.ReadAll(dataFile)
+	if err != nil {
+		log.Fatal("Error reading code sandboxes from the database!")
+	}
+	var data []snippet
+	json.Unmarshal(byteArr, &data)
+	fmt.Println(data)
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(data)
+}
+
 func StartServer() {
 	r := mux.NewRouter()
 
@@ -59,7 +80,9 @@ func StartServer() {
 	}
 
 	r.HandleFunc("/", index)
+	r.HandleFunc("/about", index)
 	r.Methods("POST").Path("/code").HandlerFunc(runCode)
+	r.Methods("GET").Path("/data").HandlerFunc(getData)
 	r.PathPrefix("/static/").Handler(http.StripPrefix("/static/", http.FileServer(http.Dir("./static"))))
 	log.Printf("Server listening on %s\n", srv.Addr)
 	log.Fatal(srv.ListenAndServe())
